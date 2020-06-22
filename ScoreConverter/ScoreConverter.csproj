@@ -172,6 +172,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SourceWorksheet.cs" />
+    <Compile Include="TargetWorkbook.cs" />
     <Compile Include="UserData.cs" />
     <Compile Include="Validator.cs" />
     <EmbeddedResource Include="InitRibbon.resx">

@@ -46,7 +46,10 @@ namespace ScoreConverter
             {
                 if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
                 {
-                    Validator.Validate(sourceWorksheet, null);
+                    if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
+                    {
+                        Validator.Validate(sourceWorksheet, targetWorkbook);
+                    }
                 }
             }
         }
