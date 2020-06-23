@@ -106,7 +106,7 @@ namespace ScoreConverter
 
             return new UserData
             {
-                No = userNumber,
+                Number = userNumber,
                 Scores = scores,
             };
         }

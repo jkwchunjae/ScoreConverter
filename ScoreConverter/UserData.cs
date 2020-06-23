@@ -8,7 +8,7 @@ namespace ScoreConverter
 {
     public class UserData
     {
-        public string No;
+        public string Number;
         public List<(SubProblem SubProblem, double UserScore)> Scores;
     }
 }
