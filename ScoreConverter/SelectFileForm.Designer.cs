@@ -105,6 +105,7 @@
             this.ExecuteButton.TabIndex = 6;
             this.ExecuteButton.Text = "Execute";
             this.ExecuteButton.UseVisualStyleBackColor = true;
+            this.ExecuteButton.Click += new System.EventHandler(this.ExecuteButton_Click);
             // 
             // SelectFileForm
             // 

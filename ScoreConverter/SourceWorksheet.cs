@@ -70,6 +70,7 @@ namespace ScoreConverter
         {
             var beginColumn = SourceConfig.BeginColumn;
             var endColumn = source.GetCell(SourceConfig.BeginRow - 1, beginColumn).End[XlDirection.xlToRight].Column;
+
             return Enumerable.Range(beginColumn, endColumn - beginColumn + 1)
                 .Select(column => source.GetCell(SourceConfig.BeginRow - 1, column))
                 .Select(cell =>

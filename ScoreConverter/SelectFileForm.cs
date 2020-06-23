@@ -49,11 +49,27 @@ namespace ScoreConverter
                 {
                     if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
                     {
-                        var result = Validator.Validate(sourceWorksheet, targetWorkbook);
+                        var result = Converter.Validate(sourceWorksheet, targetWorkbook);
                         if (result)
                         {
                             MessageBox.Show("검사 통과하였습니다.");
                         }
+                    }
+                }
+            }
+        }
+
+        private void ExecuteButton_Click(object sender, EventArgs e)
+        {
+            var sourceWorkbookName = SourceWorkbook.Text;
+            if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
+            {
+                if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
+                {
+                    if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
+                    {
+                        Converter.Execute(sourceWorksheet, targetWorkbook);
+                        MessageBox.Show("완료");
                     }
                 }
             }

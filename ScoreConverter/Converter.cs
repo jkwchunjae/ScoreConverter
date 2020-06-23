@@ -10,7 +10,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace ScoreConverter
 {
-    public static class Validator
+    public static class Converter
     {
         public static bool Validate(Excel.Worksheet sourceWorksheet, Excel.Workbook targetWorkbook)
         {
@@ -45,6 +45,7 @@ namespace ScoreConverter
                 MessageBox.Show($"선수 수가 다릅니다.\n심사위원 채점표: {sourceUserList.Count} 명\n공단채점표: {targetUserList.Count} 명");
                 return false;
             }
+
             var zipped = sourceUserList.Zip(targetUserList, (a, b) => new { Source = a, Target = b })
                 .Where(x => x.Source != x.Target)
                 .ToList();
@@ -115,6 +116,37 @@ namespace ScoreConverter
             }
 
             return true;
+        }
+
+        public static void Execute(Excel.Worksheet sourceWorksheet, Excel.Workbook targetWorkbook)
+        {
+            var source = new SourceWorksheet(sourceWorksheet);
+            var target = new TargetWorkbook(targetWorkbook, source.Problems);
+
+            foreach (var targetSheet in target.Worksheet)
+            {
+                var targetLeftTopCell = targetSheet.Sheet.Range[TargetConfig.ScoreLeftTopAddress];
+                var userDataList = targetSheet.UserNumbers.Zip(targetSheet.UserCells, (a, b) => new { UserNumber = a, Cell = b }).ToList();
+                targetSheet.Sheet.Activate();
+
+                foreach (var userData in userDataList)
+                {
+                    var userScoreData = source.Users.First(x => x.Number == userData.UserNumber);
+
+                    foreach (var scoreData in targetSheet.ScoreRange)
+                    {
+                        var targetCell = targetSheet.Sheet.GetCell(userData.Cell.Row, targetLeftTopCell.Column + scoreData.Index);
+
+                        var userScore = userScoreData.Scores
+                            .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
+                            .Where(x => x.SubProblem.SubNo == scoreData.Index + 1)
+                            .First()
+                            .UserScore;
+
+                        targetCell.Value2 = userScore.ToString();
+                    }
+                }
+            }
         }
     }
 }

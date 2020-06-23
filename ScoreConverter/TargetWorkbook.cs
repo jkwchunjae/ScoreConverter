@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,17 +30,21 @@ namespace ScoreConverter
 
     public class TargetWorksheet
     {
-        Excel.Worksheet _sheet;
+        public Excel.Worksheet Sheet;
         public Problem Problem;
         public List<string> UserNumbers;
-        public List<(double Min, double Max)> ScoreRange;
+        [JsonIgnore]
+        public List<Excel.Range> UserCells;
+        public List<( double Min, double Max, int Index, Excel.Range Cell)> ScoreRange;
 
         public TargetWorksheet(Excel.Worksheet worksheet, List<Problem> problems)
         {
-            _sheet = worksheet;
+            Sheet = worksheet;
 
             Problem = DetectProblem(worksheet, problems);
-            UserNumbers = GetUserNumbers(worksheet);
+            var userData = GetUserNumberDatas(worksheet);
+            UserNumbers = userData.Select(x => x.UserNumber).ToList();
+            UserCells = userData.Select(x => x.Cell).ToList();
             ScoreRange = GetScoreRange(worksheet);
         }
 
@@ -50,7 +55,7 @@ namespace ScoreConverter
             return problems.FirstOrDefault(x => problemName.Contains(x.ProblemName));
         }
 
-        private static List<string> GetUserNumbers(Excel.Worksheet target)
+        private static List<(string UserNumber, Excel.Range Cell)> GetUserNumberDatas(Excel.Worksheet target)
         {
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var userLeftTopRow = userLeftTopCell.Row;
@@ -62,11 +67,11 @@ namespace ScoreConverter
 
             return Enumerable.Range(userLeftTopRow, userNumberEndRow - userLeftTopRow + 1)
                 .Select(row => target.GetCell(row, TargetConfig.UserNumberColumn))
-                .Select(cell => (string)cell.Value2)
+                .Select(cell => ((string)cell.Value2, cell))
                 .ToList();
         }
 
-        public static List<(double Min, double Max)> GetScoreRange(Excel.Worksheet target)
+        public static List<(double Min, double Max, int Index, Excel.Range Cell)> GetScoreRange(Excel.Worksheet target)
         {
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var scoreRow = userLeftTopCell.Row - 1;
@@ -77,13 +82,13 @@ namespace ScoreConverter
 
             return Enumerable.Range(scoreBeginColumn, scoreEndColumn - scoreBeginColumn + 1)
                 .Select(column => target.GetCell(scoreRow, column))
-                .Select(cell => (string)cell.Value2)
-                .Select(range =>
+                .Select(cell =>
                 {
-                    var arr = range.Split('~');
+                    var arr = ((string)cell.Value2).Split('~');
                     var min = double.Parse(arr[0]);
                     var max = double.Parse(arr[1]);
-                    return (min, max);
+                    var index = cell.Column - scoreBeginColumn;
+                    return (min, max, index, cell);
                 })
                 .ToList();
         }
