@@ -71,5 +71,20 @@ namespace ScoreConverter
         {
             return worksheet.Cells[row, column];
         }
+
+        public static string StringJoin(this IEnumerable<string> source, string separator)
+        {
+            return string.Join(separator, source);
+        }
+
+        public static bool Empty<T>(this IEnumerable<T> source)
+        {
+            return !source.Any();
+        }
+
+        public static bool Empty<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+        {
+            return !source.Any(predicate);
+        }
     }
 }
