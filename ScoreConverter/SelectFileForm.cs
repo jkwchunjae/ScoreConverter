@@ -31,6 +31,7 @@ namespace ScoreConverter
             var sourceWorkbookName = SourceWorkbook.Text;
             if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var workbook))
             {
+                SourceWorksheet.Items.Clear();
                 SourceWorksheet.Items.AddRange(workbook.GetWorksheets().Select(x => x.Name).ToArray());
             }
             else
@@ -48,7 +49,11 @@ namespace ScoreConverter
                 {
                     if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
                     {
-                        Validator.Validate(sourceWorksheet, targetWorkbook);
+                        var result = Validator.Validate(sourceWorksheet, targetWorkbook);
+                        if (result)
+                        {
+                            MessageBox.Show("검사 통과하였습니다.");
+                        }
                     }
                 }
             }
