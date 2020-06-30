@@ -90,7 +90,7 @@ namespace ScoreConverter
                     .Zip(problem.ScoreRange, (a, b) => new { SubProblem = a, ScoreRange = b })
                     .ToList();
 
-                var subDiffList = subZip.Where(x => x.SubProblem.Score != x.ScoreRange.Max)
+                var subDiffList = subZip.Where(x => Math.Round(x.SubProblem.Score, 3) != Math.Round(x.ScoreRange.Max, 3))
                     .ToList();
 
                 if (subDiffList.Any())
