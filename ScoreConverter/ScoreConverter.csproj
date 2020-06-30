@@ -160,6 +160,7 @@
   -->
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Converter.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="InitRibbon.cs">
       <SubType>Component</SubType>
@@ -174,7 +175,6 @@
     <Compile Include="SourceWorksheet.cs" />
     <Compile Include="TargetWorkbook.cs" />
     <Compile Include="UserData.cs" />
-    <Compile Include="Validator.cs" />
     <EmbeddedResource Include="InitRibbon.resx">
       <DependentUpon>InitRibbon.cs</DependentUpon>
     </EmbeddedResource>
