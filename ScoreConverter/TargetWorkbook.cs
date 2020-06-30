@@ -52,7 +52,7 @@ namespace ScoreConverter
         {
             string problemName = worksheet.Range[TargetConfig.ProblemNameAddress].Value2;
 
-            return problems.FirstOrDefault(x => problemName.Contains(x.ProblemName));
+            return problems.FirstOrDefault(x => problemName == x.ProblemName);
         }
 
         private static List<(string UserNumber, Excel.Range Cell)> GetUserNumberDatas(Excel.Worksheet target)
