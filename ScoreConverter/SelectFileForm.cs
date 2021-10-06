@@ -43,19 +43,26 @@ namespace ScoreConverter
         private void ValidateButton_Click(object sender, EventArgs e)
         {
             var sourceWorkbookName = SourceWorkbook.Text;
-            if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
+            try
             {
-                if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
+                if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
                 {
-                    if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
+                    if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
                     {
-                        var result = Converter.Validate(sourceWorksheet, targetWorkbook);
-                        if (result)
+                        if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
                         {
-                            MessageBox.Show("검사 통과하였습니다.");
+                            var result = Converter.Validate(sourceWorksheet, targetWorkbook);
+                            if (result)
+                            {
+                                MessageBox.Show("검사 통과하였습니다.");
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace);
             }
         }
 

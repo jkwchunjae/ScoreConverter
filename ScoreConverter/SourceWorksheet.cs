@@ -21,7 +21,8 @@ namespace ScoreConverter
 
             Problems = GetProblems(worksheet);
 
-            Users = GetUserNumberList(worksheet)
+            var userNumberList = GetUserNumberList(worksheet);
+            Users = userNumberList
                 .Select(x => GetUserData(x.Column, x.UserNumber, Problems, worksheet))
                 .ToList();
         }
@@ -44,17 +45,50 @@ namespace ScoreConverter
         private static SubProblem GetSubProblem(Excel.Worksheet source, int row)
         {
             string problemName;
-            try { problemName = source.GetCell(row, 1).Value2; }
-            catch { MessageBox.Show($"Error on MakeSubProblem. \nSheet: {source.Name} \nRow: {row}"); throw; }
+            var problemCell = source.GetCell(row, SourceConfig.ProblemNameColumn);
+            try
+            {
+                problemName = problemCell.Value2;
+            }
+            catch
+            {
+                throw new Exception($"문제 제목을 확인하세요. \n시트: {source.Name} \n셀: {problemCell.Address}");
+            }
+
             string description;
-            try { description = source.GetCell(row, 5).Value2; }
-            catch { MessageBox.Show($"Error on MakeSubProblem. \nSheet: {source.Name} \nRow: {row}"); throw; }
+            var descriptionCell = source.GetCell(row, SourceConfig.DescriptionColumn);
+            try
+            {
+                description = descriptionCell.Value2;
+            }
+            catch
+            {
+                throw new Exception($"문제 설명을 확인하세요. \n시트: {source.Name} \n셀: {descriptionCell.Address}");
+            }
+
             double subNo;
-            try { subNo = source.GetCell(row, 2).Value2; }
-            catch { MessageBox.Show($"Error on MakeSubProblem. \nSheet: {source.Name} \nRow: {row}"); throw; }
+            var subNoCell = source.GetCell(row, SourceConfig.SubNumberColumn);
+            try
+            {
+                subNo = subNoCell.Value2;
+                int.Parse(subNo.ToString());
+            }
+            catch
+            {
+                throw new Exception($"세부번호 확인하세요. 정수로 입력하세요. \n시트: {source.Name} \n셀: {subNoCell.Address}");
+            }
+
             double score;
-            try { score = source.GetCell(row, 4).Value2; }
-            catch { MessageBox.Show($"Error on MakeSubProblem. \nSheet: {source.Name} \nRow: {row}"); throw; }
+            var scoreCell = source.GetCell(row, SourceConfig.ScoreColumn);
+            try
+            {
+                score = scoreCell.Value2;
+                double.Parse(score.ToString());
+            }
+            catch
+            {
+                throw new Exception($"배점을 확인하세요. 숫자로 입력하세요. \n시트: {source.Name} \n셀: {scoreCell.Address}");
+            }
 
             return new SubProblem
             {
@@ -76,9 +110,9 @@ namespace ScoreConverter
                 .Select(cell =>
                 {
                     var value = cell.Value2;
-                    if (value is string)
+                    if (value is string valueStr)
                     {
-                        return (cell.Column, (string)value);
+                        return (cell.Column, valueStr);
                     }
                     else
                     {
@@ -96,19 +130,42 @@ namespace ScoreConverter
                 .Select(x =>
                 {
                     var value = x.Cell.Value2;
-                    var score = 0.0;
-                    if (value is double)
+                    if (value is double valueDouble)
                     {
-                        score = (double)value;
+                        return new
+                        {
+                            x.SubProblem,
+                            Score = valueDouble,
+                            Error = false,
+                            ErrorMessage = string.Empty,
+                        };
                     }
-                    return (x.SubProblem, score);
+                    else
+                    {
+                        return new
+                        {
+                            x.SubProblem,
+                            Score = 0.0,
+                            Error = true,
+                            ErrorMessage = $"점수가 숫자로 변환되지 않습니다. 시트: {source.Name}, 셀: {x.Cell.Address}",
+                        };
+                    }
                 })
                 .ToList();
+
+            var errorMessage = scores.Where(x => x.Error)
+                .Select(x => x.ErrorMessage)
+                .StringJoin(Environment.NewLine);
+
+            if (scores.Any(x => x.Error))
+            {
+                throw new Exception(errorMessage);
+            }
 
             return new UserData
             {
                 Number = userNumber,
-                Scores = scores,
+                Scores = scores.Select(x => (x.SubProblem, x.Score)).ToList(),
             };
         }
     }
