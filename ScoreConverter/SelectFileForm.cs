@@ -42,9 +42,9 @@ namespace ScoreConverter
 
         private void ValidateButton_Click(object sender, EventArgs e)
         {
-            var sourceWorkbookName = SourceWorkbook.Text;
             try
             {
+                var sourceWorkbookName = SourceWorkbook.Text;
                 if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
                 {
                     if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
@@ -68,17 +68,24 @@ namespace ScoreConverter
 
         private void ExecuteButton_Click(object sender, EventArgs e)
         {
-            var sourceWorkbookName = SourceWorkbook.Text;
-            if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
+            try
             {
-                if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
+                var sourceWorkbookName = SourceWorkbook.Text;
+                if (ExcelApp.TryGetWorkbook(x => x.Name == sourceWorkbookName, out var sourceWorkbook))
                 {
-                    if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
+                    if (sourceWorkbook.TryGetWorksheet(x => x.Name == SourceWorksheet.Text, out var sourceWorksheet))
                     {
-                        Converter.Execute(sourceWorksheet, targetWorkbook);
-                        MessageBox.Show("완료");
+                        if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
+                        {
+                            Converter.Execute(sourceWorksheet, targetWorkbook);
+                            MessageBox.Show("완료");
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace);
             }
         }
     }
