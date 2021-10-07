@@ -23,15 +23,16 @@ namespace ScoreConverter
             File.WriteAllText(@"D:\target.json", JsonConvert.SerializeObject(target, Formatting.Indented), Encoding.UTF8);
 
             // 문제 이름이 모두 같은가?
-            var nullProblems = target.Worksheet
-                .Where(x => x.Problem == null)
-                .ToList();
+            // TargetWorkbook 만들 때 체크하게 되어 있음.
+            //var nullProblems = target.Worksheet
+            //    .Where(x => x.Problem == null)
+            //    .ToList();
 
-            if (nullProblems.Any())
-            {
-                MessageBox.Show($"문제 이름이 다릅니다.");
-                return false;
-            }
+            //if (nullProblems.Any())
+            //{
+            //    MessageBox.Show($"문제 이름이 다릅니다.");
+            //    return false;
+            //}
 
             // 3. 선수 수가 맞는가? 양쪽이 정확히 같아야 함.
             var targetUserList = target.Worksheet

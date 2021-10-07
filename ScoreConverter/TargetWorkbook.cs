@@ -30,6 +30,7 @@ namespace ScoreConverter
 
     public class TargetWorksheet
     {
+        [JsonIgnore]
         public Excel.Worksheet Sheet;
         public Problem Problem;
         public List<string> UserNumbers;
@@ -52,7 +53,15 @@ namespace ScoreConverter
         {
             string problemName = worksheet.Range[TargetConfig.ProblemNameAddress].Value2;
 
-            return problems.FirstOrDefault(x => problemName == x.ProblemName);
+            var problem = problems.FirstOrDefault(x => x.ProblemName == problemName);
+            if (problem == null)
+            {
+                throw new Exception($"문제를 찾을 수 없습니다.\n시트: {worksheet.Name}\n문제 이름: {problemName}");
+            }
+            else
+            {
+                return problem;
+            }
         }
 
         private static List<(string UserNumber, Excel.Range Cell)> GetUserNumberDatas(Excel.Worksheet target)
@@ -61,7 +70,7 @@ namespace ScoreConverter
             var userLeftTopRow = userLeftTopCell.Row;
 
             var userNumberBeginCell = target.GetCell(userLeftTopRow, TargetConfig.UserNumberColumn);
-            var userNumberEndRow = userNumberBeginCell.Offset[1, 0].Value2 is null ?
+            var userNumberEndRow = userNumberBeginCell.Offset[1, 0].Value2 is null ? // 시트에 선수가 한명만 있는 경우
                 userNumberBeginCell.Row :
                 userNumberBeginCell.End[Excel.XlDirection.xlDown].Row;
 
@@ -76,7 +85,7 @@ namespace ScoreConverter
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var scoreRow = userLeftTopCell.Row - 1;
             var scoreBeginColumn = userLeftTopCell.Column;
-            var scoreEndColumn = userLeftTopCell.Offset[-1, 1].Value2 is null ?
+            var scoreEndColumn = userLeftTopCell.Offset[-1, 1].Value2 is null ? // 시트에 세부 문제가 1개인 경우
                 scoreBeginColumn :
                 userLeftTopCell.Offset[-1, 0].End[Excel.XlDirection.xlToRight].Column;
 
