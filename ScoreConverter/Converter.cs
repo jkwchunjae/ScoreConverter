@@ -16,11 +16,11 @@ namespace ScoreConverter
         {
             var source = new SourceWorksheet(sourceWorksheet);
 
-            File.WriteAllText(@"D:\source.json", JsonConvert.SerializeObject(source.Problems, Formatting.Indented), Encoding.UTF8);
-            File.WriteAllText(@"D:\score.json", JsonConvert.SerializeObject(source.Users, Formatting.Indented), Encoding.UTF8);
+            //File.WriteAllText(@"D:\source.json", JsonConvert.SerializeObject(source.Problems, Formatting.Indented), Encoding.UTF8);
+            //File.WriteAllText(@"D:\score.json", JsonConvert.SerializeObject(source.Users, Formatting.Indented), Encoding.UTF8);
 
             var target = new TargetWorkbook(targetWorkbook, source.Problems);
-            File.WriteAllText(@"D:\target.json", JsonConvert.SerializeObject(target, Formatting.Indented), Encoding.UTF8);
+            //File.WriteAllText(@"D:\target.json", JsonConvert.SerializeObject(target, Formatting.Indented), Encoding.UTF8);
 
             // 문제 이름이 모두 같은가?
             // TargetWorkbook 만들 때 체크하게 되어 있음.
@@ -72,6 +72,44 @@ namespace ScoreConverter
             }
 
             // 2. 세부 항목 수가 맞는가?
+            var sourceSubProblems = source.Problems
+                .SelectMany(x => x.SubProblems.Select(sub => (sub.ProblemName, sub.Description)))
+                .Distinct()
+                .ToList();
+            var targetSubProblems = target.Worksheet
+                .SelectMany(x => x.ScoreRange.Select(sub => (x.Problem.ProblemName, sub.Desc)))
+                .Distinct()
+                .ToList();
+
+            List<string> missingSubProblems = new List<string>();
+            foreach (var targetSubProblem in targetSubProblems)
+            {
+                var t = targetSubProblem;
+                if (sourceSubProblems.Empty(x => x.ProblemName == t.ProblemName && x.Description.StartsWith(t.Desc)))
+                {
+                    missingSubProblems.Add($"문제: {t.ProblemName},  항목: {t.Desc}");
+                    //MessageBox.Show($"심사위원 채점표에서 \"{t.Desc}\"를 찾을 수 없습니다.");
+                    //return false;
+                }
+            }
+            if (missingSubProblems.Any())
+            {
+                var missing = missingSubProblems.Select(x => $"\"{x}\"")
+                    .StringJoin(Environment.NewLine);
+                MessageBox.Show($"심사위원 채점표에서 \n{missing}\n 를 찾을 수 없습니다.");
+                return false;
+            }
+            foreach (var problem in targetSubProblems.Select(x => x.ProblemName))
+            {
+                var s = sourceSubProblems.Where(x => x.ProblemName == problem).ToList();
+                var t = targetSubProblems.Where(x => x.ProblemName == problem).ToList();
+                if (s.Count != t.Count)
+                {
+                    MessageBox.Show($"세부항목 수가 다릅니다.\n문제: {problem}\n심사위원채점표: {s.Count} 항목\n공단채점표: {t.Count} 항목");
+                    return false;
+                }
+            }
+
             //foreach (var targetSheet in target.Worksheet)
             //{
             //    if (targetSheet.Problem.SubProblems.Count != targetSheet.ScoreRange.Count)
@@ -118,10 +156,13 @@ namespace ScoreConverter
                 }
             }
 
+            // 실행해보자
+            Execute(sourceWorksheet, targetWorkbook, execute: false);
+
             return true;
         }
 
-        public static void Execute(Excel.Worksheet sourceWorksheet, Excel.Workbook targetWorkbook)
+        public static void Execute(Excel.Worksheet sourceWorksheet, Excel.Workbook targetWorkbook, bool execute)
         {
             var source = new SourceWorksheet(sourceWorksheet);
             var target = new TargetWorkbook(targetWorkbook, source.Problems);
@@ -132,30 +173,45 @@ namespace ScoreConverter
                 var userDataList = targetSheet.UserNumbers.Zip(targetSheet.UserCells, (a, b) => new { UserNumber = a, Cell = b }).ToList();
                 targetSheet.Sheet.Activate();
 
+                var minRow = userDataList.Min(x => x.Cell.Row);
+                var maxRow = userDataList.Max(x => x.Cell.Row);
+                var rowCount = maxRow - minRow + 1;
+                var subProblemCount = targetSheet.ScoreRange.Count;
+
+                var scoreArray = new object[rowCount, subProblemCount];
+
                 foreach (var userData in userDataList)
                 {
                     var userScoreData = source.Users.First(x => x.Number == userData.UserNumber);
 
+                    int column = 0;
                     foreach (var scoreData in targetSheet.ScoreRange)
                     {
                         var targetCell = targetSheet.Sheet.GetCell(userData.Cell.Row, targetLeftTopCell.Column + scoreData.Index);
 
-                        try
-                        {
-                            var userScore = userScoreData.Scores
-                                .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
-                                .Where(x => x.SubProblem.Description.StartsWith(scoreData.Desc))
-                                .First()
-                                .UserScore;
+                        var userScores = userScoreData.Scores
+                            .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
+                            .Where(x => x.SubProblem.Description.StartsWith(scoreData.Desc))
+                            .ToList();
 
-                            targetCell.Value2 = userScore.ToString();
-                        }
-                        catch
+                        if (userScores.Empty())
                         {
-                            MessageBox.Show($"{targetCell.Address} 심사위원 채점표에서 {targetCell.Offset[-2, 0].Value2}를 찾을 수 없습니다.");
-                            throw;
+                            throw new Exception($"{targetCell.Address} 심사위원 채점표에서 \"{targetCell.Offset[-2, 0].Value2}\"를 찾을 수 없습니다.");
                         }
+
+                        var userScore = userScores.First().UserScore;
+
+                        // targetCell.Value2 = userScore.ToString();
+                        scoreArray[userData.Cell.Row - minRow, column] = userScore.ToString();
+                        column++;
                     }
+                }
+
+                if (execute)
+                {
+                    var minCell = targetLeftTopCell;
+                    var maxCell = minCell.Offset[rowCount - 1, subProblemCount - 1];
+                    targetSheet.Sheet.Range[minCell, maxCell].Value2 = scoreArray;
                 }
             }
         }

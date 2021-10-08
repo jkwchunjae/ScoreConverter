@@ -77,7 +77,7 @@ namespace ScoreConverter
                     {
                         if (ExcelApp.TryGetWorkbook(x => TargetWorkbook.Text == x.Name, out var targetWorkbook))
                         {
-                            Converter.Execute(sourceWorksheet, targetWorkbook);
+                            Converter.Execute(sourceWorksheet, targetWorkbook, execute: true);
                             MessageBox.Show("완료");
                         }
                     }
