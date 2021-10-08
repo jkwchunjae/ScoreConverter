@@ -36,7 +36,7 @@ namespace ScoreConverter
         public List<string> UserNumbers;
         [JsonIgnore]
         public List<Excel.Range> UserCells;
-        public List<( double Min, double Max, int Index, Excel.Range Cell)> ScoreRange;
+        public List<( double Min, double Max, int Index, string Desc, Excel.Range Cell)> ScoreRange;
 
         public TargetWorksheet(Excel.Worksheet worksheet, List<Problem> problems)
         {
@@ -80,7 +80,7 @@ namespace ScoreConverter
                 .ToList();
         }
 
-        public static List<(double Min, double Max, int Index, Excel.Range Cell)> GetScoreRange(Excel.Worksheet target)
+        public static List<(double Min, double Max, int Index, string Description, Excel.Range Cell)> GetScoreRange(Excel.Worksheet target)
         {
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var scoreRow = userLeftTopCell.Row - 1;
@@ -91,13 +91,22 @@ namespace ScoreConverter
 
             return Enumerable.Range(scoreBeginColumn, scoreEndColumn - scoreBeginColumn + 1)
                 .Select(column => target.GetCell(scoreRow, column))
+                .Where(cell => cell.Offset[-1, 0].Value2 != "총계")
                 .Select(cell =>
                 {
-                    var arr = ((string)cell.Value2).Split('~');
-                    var min = double.Parse(arr[0]);
-                    var max = double.Parse(arr[1]);
-                    var index = cell.Column - scoreBeginColumn;
-                    return (min, max, index, cell);
+                    try
+                    {
+                        var arr = ((string)cell.Value2).Split('~');
+                        var min = double.Parse(arr[0]);
+                        var max = double.Parse(arr[1]);
+                        var index = cell.Column - scoreBeginColumn;
+                        string desc = (string)cell.Offset[-1, 0].Value2;
+                        return (min, max, index, desc, cell);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"{target.Name}, {cell.Address}");
+                    }
                 })
                 .ToList();
         }

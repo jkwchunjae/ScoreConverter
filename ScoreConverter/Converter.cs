@@ -38,10 +38,12 @@ namespace ScoreConverter
             var targetUserList = target.Worksheet
                 .GroupBy(x => x.Problem.ProblemName)
                 .Select(x => x.SelectMany(e => e.UserNumbers).OrderBy(e => e).ToList())
-                .First();
+                .First()
+                .Distinct()
+                .ToList();
 
-            var sourceUserList = source.Users.Select(x => x.Number).OrderBy(x => x).ToList();
-            if (sourceUserList.Count != targetUserList.Count)
+            var sourceUserList = source.Users.Select(x => x.Number).Distinct().OrderBy(x => x).ToList();
+            if (sourceUserList.Count != targetUserList.Count())
             {
                 MessageBox.Show($"선수 수가 다릅니다.\n심사위원 채점표: {sourceUserList.Count} 명\n공단채점표: {targetUserList.Count} 명");
                 return false;
@@ -70,14 +72,14 @@ namespace ScoreConverter
             }
 
             // 2. 세부 항목 수가 맞는가?
-            foreach (var targetSheet in target.Worksheet)
-            {
-                if (targetSheet.Problem.SubProblems.Count != targetSheet.ScoreRange.Count)
-                {
-                    MessageBox.Show($"세부항목 수가 다릅니다.\n문제: {targetSheet.Problem.ProblemName}\n심사위원채점표: {targetSheet.Problem.SubProblems.Count} 항목\n공단채점표: {targetSheet.ScoreRange.Count} 항목");
-                    return false;
-                }
-            }
+            //foreach (var targetSheet in target.Worksheet)
+            //{
+            //    if (targetSheet.Problem.SubProblems.Count != targetSheet.ScoreRange.Count)
+            //    {
+            //        MessageBox.Show($"세부항목 수가 다릅니다.\n문제: {targetSheet.Problem.ProblemName}\n심사위원채점표: {targetSheet.Problem.SubProblems.Count} 항목\n공단채점표: {targetSheet.ScoreRange.Count} 항목");
+            //        return false;
+            //    }
+            //}
 
             // 4. 점수 배점이 같은가?
             var problems = target.Worksheet
@@ -138,13 +140,21 @@ namespace ScoreConverter
                     {
                         var targetCell = targetSheet.Sheet.GetCell(userData.Cell.Row, targetLeftTopCell.Column + scoreData.Index);
 
-                        var userScore = userScoreData.Scores
-                            .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
-                            .Where(x => x.SubProblem.SubNo == scoreData.Index + 1)
-                            .First()
-                            .UserScore;
+                        try
+                        {
+                            var userScore = userScoreData.Scores
+                                .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
+                                .Where(x => x.SubProblem.Description == scoreData.Desc)
+                                .First()
+                                .UserScore;
 
-                        targetCell.Value2 = userScore.ToString();
+                            targetCell.Value2 = userScore.ToString();
+                        }
+                        catch
+                        {
+                            MessageBox.Show($"{targetCell.Address} 심사위원 채점표에서 {targetCell.Offset[-2, 0].Value2}를 찾을 수 없습니다.");
+                            throw;
+                        }
                     }
                 }
             }
