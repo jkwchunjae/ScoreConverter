@@ -144,7 +144,7 @@ namespace ScoreConverter
                         {
                             var userScore = userScoreData.Scores
                                 .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
-                                .Where(x => x.SubProblem.Description == scoreData.Desc)
+                                .Where(x => x.SubProblem.Description.StartsWith(scoreData.Desc))
                                 .First()
                                 .UserScore;
 
