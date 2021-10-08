@@ -34,13 +34,13 @@ namespace ScoreConverter
         /// <summary>
         /// (값: 4) 세부 항목의 배점이 적혀있는 열
         /// </summary>
-        public static int ScoreColumn { get; } = 4;
+        public static int ScoreColumn { get; } = 5;
 
 
         /// <summary>
         /// 설명이 써있는 열
         /// </summary>
-        public static int DescriptionColumn { get; } = 5;
+        public static int DescriptionColumn { get; } = 4;
 
         /// <summary>
         /// (값: 6) 1번 선수가 있는 열
