@@ -35,6 +35,7 @@
             this.TargetWorkbook = new System.Windows.Forms.ComboBox();
             this.ValidateButton = new System.Windows.Forms.Button();
             this.ExecuteButton = new System.Windows.Forms.Button();
+            this.CreateSourceButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -91,7 +92,7 @@
             this.ValidateButton.Location = new System.Drawing.Point(169, 250);
             this.ValidateButton.Name = "ValidateButton";
             this.ValidateButton.Size = new System.Drawing.Size(163, 35);
-            this.ValidateButton.TabIndex = 5;
+            this.ValidateButton.TabIndex = 6;
             this.ValidateButton.Text = "Validate";
             this.ValidateButton.UseVisualStyleBackColor = true;
             this.ValidateButton.Click += new System.EventHandler(this.ValidateButton_Click);
@@ -102,16 +103,28 @@
             this.ExecuteButton.Location = new System.Drawing.Point(339, 250);
             this.ExecuteButton.Name = "ExecuteButton";
             this.ExecuteButton.Size = new System.Drawing.Size(163, 35);
-            this.ExecuteButton.TabIndex = 6;
+            this.ExecuteButton.TabIndex = 7;
             this.ExecuteButton.Text = "Execute";
             this.ExecuteButton.UseVisualStyleBackColor = true;
             this.ExecuteButton.Click += new System.EventHandler(this.ExecuteButton_Click);
+            // 
+            // CreateSourceButton
+            // 
+            this.CreateSourceButton.Font = new System.Drawing.Font("Malgun Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
+            this.CreateSourceButton.Location = new System.Drawing.Point(41, 250);
+            this.CreateSourceButton.Name = "CreateSourceButton";
+            this.CreateSourceButton.Size = new System.Drawing.Size(122, 35);
+            this.CreateSourceButton.TabIndex = 5;
+            this.CreateSourceButton.Text = "Create";
+            this.CreateSourceButton.UseVisualStyleBackColor = true;
+            this.CreateSourceButton.Click += new System.EventHandler(this.CreateSourceButton_Click);
             // 
             // SelectFileForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(550, 343);
+            this.Controls.Add(this.CreateSourceButton);
             this.Controls.Add(this.ExecuteButton);
             this.Controls.Add(this.ValidateButton);
             this.Controls.Add(this.TargetWorkbook);
@@ -136,5 +149,6 @@
         private System.Windows.Forms.ComboBox TargetWorkbook;
         private System.Windows.Forms.Button ValidateButton;
         private System.Windows.Forms.Button ExecuteButton;
+        private System.Windows.Forms.Button CreateSourceButton;
     }
 }

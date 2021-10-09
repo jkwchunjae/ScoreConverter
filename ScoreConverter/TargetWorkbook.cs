@@ -32,11 +32,14 @@ namespace ScoreConverter
     {
         [JsonIgnore]
         public Excel.Worksheet Sheet;
+        public string ProblemName => Problem?.ProblemName ?? _problemName;
         public Problem Problem;
         public List<string> UserNumbers;
         [JsonIgnore]
         public List<Excel.Range> UserCells;
         public List<( double Min, double Max, int Index, string Desc, Excel.Range Cell)> ScoreRange;
+
+        private string _problemName = string.Empty;
 
         public TargetWorksheet(Excel.Worksheet worksheet, List<Problem> problems)
         {
@@ -49,9 +52,15 @@ namespace ScoreConverter
             ScoreRange = GetScoreRange(worksheet);
         }
 
-        private static Problem DetectProblem(Excel.Worksheet worksheet, List<Problem> problems)
+        private Problem DetectProblem(Excel.Worksheet worksheet, List<Problem> problems)
         {
             string problemName = worksheet.Range[TargetConfig.ProblemNameAddress].Value2;
+
+            if (problems == null)
+            {
+                _problemName = problemName;
+                return null;
+            }
 
             var problem = problems.FirstOrDefault(x => x.ProblemName == problemName);
             if (problem == null)

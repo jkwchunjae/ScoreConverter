@@ -88,5 +88,31 @@ namespace ScoreConverter
                 MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace);
             }
         }
+
+        private void CreateSourceButton_Click(object sender, EventArgs e)
+        {
+            if (ExcelApp.TryGetWorkbook(x => x.Name == TargetWorkbook.Text, out var targetWorkbook))
+            {
+                var target = new TargetWorkbook(targetWorkbook, problems: null);
+
+                var subProblems = target.Worksheet
+                    .SelectMany(x => x.ScoreRange.Select(sub => (x.ProblemName, sub.Desc, sub.Max)))
+                    .Distinct()
+                    .ToList();
+
+                var wb = ExcelApp.Workbooks.Add();
+                if (wb.TryGetWorksheet(x => true, out var sheet))
+                {
+                    var row = 0;
+                    foreach (var sub in subProblems)
+                    {
+                        row++;
+                        sheet.Cells[row, 1].Value2 = sub.ProblemName;
+                        sheet.Cells[row, 2].Value2 = sub.Desc;
+                        sheet.Cells[row, 3].Value2 = sub.Max;
+                    }
+                }
+            }
+        }
     }
 }
