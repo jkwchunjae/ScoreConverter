@@ -9,7 +9,6 @@ namespace ScoreConverter
     public class SubProblem
     {
         public string ProblemName;
-        public int SubNo;
         public double Score;
         public string Description;
         public int Row;

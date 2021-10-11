@@ -66,18 +66,6 @@ namespace ScoreConverter
                 throw new Exception($"문제 설명을 확인하세요. \n시트: {source.Name} \n셀: {descriptionCell.Address}");
             }
 
-            double subNo;
-            var subNoCell = source.GetCell(row, SourceConfig.SubNumberColumn);
-            try
-            {
-                subNo = subNoCell.Value2;
-                int.Parse(subNo.ToString());
-            }
-            catch
-            {
-                throw new Exception($"세부번호 확인하세요. 정수로 입력하세요. \n시트: {source.Name} \n셀: {subNoCell.Address}");
-            }
-
             double score;
             var scoreCell = source.GetCell(row, SourceConfig.ScoreColumn);
             try
@@ -94,7 +82,6 @@ namespace ScoreConverter
             {
                 ProblemName = problemName,
                 Description = description,
-                SubNo = (int)subNo,
                 Score = score,
                 Row = row,
             };

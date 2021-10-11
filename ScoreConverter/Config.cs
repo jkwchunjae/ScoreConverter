@@ -24,28 +24,21 @@ namespace ScoreConverter
 
 
         /// <summary>
-        /// (값: 2) 문제의 세부 항목이 적혀있는 열
-        /// 공단에서 다운 받은 엑셀 파일의 "채점항목"에 해당한다.
-        /// 꼭 이름이 같진 않아도 된다.
+        /// (값: 2) 설명이 써있는 열
         /// </summary>
-        public static int SubNumberColumn { get; } = 2;
+        public static int DescriptionColumn { get; } = 2;
 
 
         /// <summary>
-        /// (값: 4) 세부 항목의 배점이 적혀있는 열
+        /// (값: 3) 세부 항목의 배점이 적혀있는 열
         /// </summary>
-        public static int ScoreColumn { get; } = 5;
+        public static int ScoreColumn { get; } = 3;
 
 
         /// <summary>
-        /// 설명이 써있는 열
+        /// (값: 4) 1번 선수가 있는 열
         /// </summary>
-        public static int DescriptionColumn { get; } = 4;
-
-        /// <summary>
-        /// (값: 6) 1번 선수가 있는 열
-        /// </summary>
-        public static int BeginColumn { get; } = 6;
+        public static int BeginColumn { get; } = 4;
     }
 
     public static class TargetConfig
