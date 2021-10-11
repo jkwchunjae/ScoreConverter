@@ -93,10 +93,10 @@ namespace ScoreConverter
         {
             if (ExcelApp.TryGetWorkbook(x => x.Name == TargetWorkbook.Text, out var targetWorkbook))
             {
-                var target = new TargetWorkbook(targetWorkbook, problems: null);
+                var target = new TargetWorkbook(targetWorkbook);
 
                 var subProblems = target.Worksheet
-                    .SelectMany(x => x.ScoreRange.Select(sub => (x.ProblemName, sub.Desc, sub.Max)))
+                    .SelectMany(x => x.SubProblems.Select(sub => (x.ProblemName, sub.Desc, sub.Max)))
                     .Distinct()
                     .ToList();
 

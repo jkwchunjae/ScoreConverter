@@ -12,68 +12,46 @@ namespace ScoreConverter
     {
         public List<TargetWorksheet> Worksheet;
 
-        public List<Problem> Problems => Worksheet
-            .Select(x => x.Problem)
+        public List<string> Problems => Worksheet
+            .Select(x => x.ProblemName)
             .Distinct()
             .Where(x => x != null)
             .ToList();
 
-        public TargetWorkbook(Excel.Workbook workbook, List<Problem> problems)
+        public TargetWorkbook(Excel.Workbook workbook)
         {
             var sheets = workbook.GetWorksheets();
 
             Worksheet = sheets
-                .Select(x => new TargetWorksheet(x, problems))
+                .Select(x => new TargetWorksheet(x))
                 .ToList();
         }
     }
 
     public class TargetWorksheet
     {
-        [JsonIgnore]
-        public Excel.Worksheet Sheet;
-        public string ProblemName => Problem?.ProblemName ?? _problemName;
-        public Problem Problem;
-        public List<string> UserNumbers;
-        [JsonIgnore]
-        public List<Excel.Range> UserCells;
-        public List<( double Min, double Max, int Index, string Desc, Excel.Range Cell)> ScoreRange;
+        public Excel.Worksheet Sheet { get; private set; }
+        public string ProblemName { get; private set; }
+        public List<(string Number, Excel.Range Cell)> UserData { get; private set; }
+        public List<( double Min, double Max, int Column, string Desc, Excel.Range Cell)> SubProblems { get; private set; }
 
-        private string _problemName = string.Empty;
-
-        public TargetWorksheet(Excel.Worksheet worksheet, List<Problem> problems)
+        public TargetWorksheet(Excel.Worksheet worksheet)
         {
             Sheet = worksheet;
 
-            Problem = DetectProblem(worksheet, problems);
-            var userData = GetUserNumberDatas(worksheet);
-            UserNumbers = userData.Select(x => x.UserNumber).ToList();
-            UserCells = userData.Select(x => x.Cell).ToList();
-            ScoreRange = GetScoreRange(worksheet);
+            ProblemName = GetProblemName(worksheet);
+            UserData = GetUserNumberDatas(worksheet);
+            SubProblems = GetScoreRange(worksheet);
         }
 
-        private Problem DetectProblem(Excel.Worksheet worksheet, List<Problem> problems)
+        private string GetProblemName(Excel.Worksheet worksheet)
         {
             string problemName = worksheet.Range[TargetConfig.ProblemNameAddress].Value2;
 
-            if (problems == null)
-            {
-                _problemName = problemName;
-                return null;
-            }
-
-            var problem = problems.FirstOrDefault(x => x.ProblemName == problemName);
-            if (problem == null)
-            {
-                throw new Exception($"문제를 찾을 수 없습니다.\n시트: {worksheet.Name}\n문제 이름: {problemName}");
-            }
-            else
-            {
-                return problem;
-            }
+            return problemName;
         }
 
-        private static List<(string UserNumber, Excel.Range Cell)> GetUserNumberDatas(Excel.Worksheet target)
+        private static List<(string Number, Excel.Range Cell)> GetUserNumberDatas(Excel.Worksheet target)
         {
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var userLeftTopRow = userLeftTopCell.Row;
@@ -89,7 +67,7 @@ namespace ScoreConverter
                 .ToList();
         }
 
-        public static List<(double Min, double Max, int Index, string Description, Excel.Range Cell)> GetScoreRange(Excel.Worksheet target)
+        public static List<(double Min, double Max, int Column, string Description, Excel.Range Cell)> GetScoreRange(Excel.Worksheet target)
         {
             var userLeftTopCell = target.Range[TargetConfig.ScoreLeftTopAddress];
             var scoreRow = userLeftTopCell.Row - 1;
@@ -108,9 +86,8 @@ namespace ScoreConverter
                         var arr = ((string)cell.Value2).Split('~');
                         var min = double.Parse(arr[0]);
                         var max = double.Parse(arr[1]);
-                        var index = cell.Column - scoreBeginColumn;
                         string desc = (string)cell.Offset[-1, 0].Value2;
-                        return (min, max, index, desc, cell);
+                        return (min, max, cell.Column, desc, cell);
                     }
                     catch (Exception ex)
                     {

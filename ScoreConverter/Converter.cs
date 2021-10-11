@@ -19,7 +19,7 @@ namespace ScoreConverter
             //File.WriteAllText(@"D:\source.json", JsonConvert.SerializeObject(source.Problems, Formatting.Indented), Encoding.UTF8);
             //File.WriteAllText(@"D:\score.json", JsonConvert.SerializeObject(source.Users, Formatting.Indented), Encoding.UTF8);
 
-            var target = new TargetWorkbook(targetWorkbook, source.Problems);
+            var target = new TargetWorkbook(targetWorkbook);
             //File.WriteAllText(@"D:\target.json", JsonConvert.SerializeObject(target, Formatting.Indented), Encoding.UTF8);
 
             // 문제 이름이 모두 같은가?
@@ -36,8 +36,8 @@ namespace ScoreConverter
 
             // 3. 선수 수가 맞는가? 양쪽이 정확히 같아야 함.
             var targetUserList = target.Worksheet
-                .GroupBy(x => x.Problem.ProblemName)
-                .Select(x => x.SelectMany(e => e.UserNumbers).OrderBy(e => e).ToList())
+                .GroupBy(x => x.ProblemName)
+                .Select(x => x.SelectMany(e => e.UserData.Select(u => u.Number)).OrderBy(e => e).ToList())
                 .First()
                 .Distinct()
                 .ToList();
@@ -72,20 +72,20 @@ namespace ScoreConverter
             }
 
             // 2. 세부 항목 수가 맞는가?
-            var sourceSubProblems = source.Problems
+            var sourceSubProblemsName = source.Problems
                 .SelectMany(x => x.SubProblems.Select(sub => (sub.ProblemName, sub.Description)))
                 .Distinct()
                 .ToList();
-            var targetSubProblems = target.Worksheet
-                .SelectMany(x => x.ScoreRange.Select(sub => (x.Problem.ProblemName, sub.Desc)))
+            var targetSubProblemsName = target.Worksheet
+                .SelectMany(x => x.SubProblems.Select(sub => (x.ProblemName, sub.Desc)))
                 .Distinct()
                 .ToList();
 
             List<string> missingSubProblems = new List<string>();
-            foreach (var targetSubProblem in targetSubProblems)
+            foreach (var targetSubProblem in targetSubProblemsName)
             {
                 var t = targetSubProblem;
-                if (sourceSubProblems.Empty(x => x.ProblemName == t.ProblemName && x.Description.StartsWith(t.Desc)))
+                if (sourceSubProblemsName.Empty(x => x.ProblemName == t.ProblemName && x.Description.StartsWith(t.Desc)))
                 {
                     missingSubProblems.Add($"문제: {t.ProblemName},  항목: {t.Desc}");
                     //MessageBox.Show($"심사위원 채점표에서 \"{t.Desc}\"를 찾을 수 없습니다.");
@@ -99,10 +99,10 @@ namespace ScoreConverter
                 MessageBox.Show($"심사위원 채점표에서 \n{missing}\n 를 찾을 수 없습니다.");
                 return false;
             }
-            foreach (var problem in targetSubProblems.Select(x => x.ProblemName))
+            foreach (var problem in targetSubProblemsName.Select(x => x.ProblemName))
             {
-                var s = sourceSubProblems.Where(x => x.ProblemName == problem).ToList();
-                var t = targetSubProblems.Where(x => x.ProblemName == problem).ToList();
+                var s = sourceSubProblemsName.Where(x => x.ProblemName == problem).ToList();
+                var t = targetSubProblemsName.Where(x => x.ProblemName == problem).ToList();
                 if (s.Count != t.Count)
                 {
                     MessageBox.Show($"세부항목 수가 다릅니다.\n문제: {problem}\n심사위원채점표: {s.Count} 항목\n공단채점표: {t.Count} 항목");
@@ -110,34 +110,35 @@ namespace ScoreConverter
                 }
             }
 
-            //foreach (var targetSheet in target.Worksheet)
-            //{
-            //    if (targetSheet.Problem.SubProblems.Count != targetSheet.ScoreRange.Count)
-            //    {
-            //        MessageBox.Show($"세부항목 수가 다릅니다.\n문제: {targetSheet.Problem.ProblemName}\n심사위원채점표: {targetSheet.Problem.SubProblems.Count} 항목\n공단채점표: {targetSheet.ScoreRange.Count} 항목");
-            //        return false;
-            //    }
-            //}
-
             // 4. 점수 배점이 같은가?
             var problems = target.Worksheet
-                .GroupBy(x => x.Problem.ProblemName)
+                .GroupBy(x => x.ProblemName)
                 .Select(x => x.First())
                 .ToList();
 
-            foreach (var problem in problems)
+            foreach (var targetProblem in problems)
             {
-                var subZip = problem.Problem.SubProblems
-                    .Zip(problem.ScoreRange, (a, b) => new { SubProblem = a, ScoreRange = b })
+                var sourceSubProblems = source.Problems.First(x => x.ProblemName == targetProblem.ProblemName).SubProblems;
+                var targetSubProblems = targetProblem.SubProblems;
+
+                var subZip = targetProblem.SubProblems
+                    .Select(tSub => new
+                    {
+                        Target = tSub,
+                        Source = sourceSubProblems.First(s => s.Description == tSub.Desc),
+                    })
                     .ToList();
 
-                var subDiffList = subZip.Where(x => Math.Round(x.SubProblem.Score, 3) != Math.Round(x.ScoreRange.Max, 3))
+                var subDiffList = subZip
+                    .Where(x => Math.Round(x.Source.Score, 3) != Math.Round(x.Target.Max, 3))
                     .ToList();
 
                 if (subDiffList.Any())
                 {
-                    var subDiff = subDiffList.First();
-                    MessageBox.Show($"세부항목 배점이 다릅니다.\n항목: {problem.Problem.ProblemName} - {subDiff.SubProblem.Description}\n심사위원채점표: {subDiff.SubProblem.Score}\n공단채점표: {subDiff.ScoreRange.Max}");
+                    var errorMessage = subDiffList
+                        .Select((s, i) => $"{i + 1}. 항목: {targetProblem.ProblemName} - {s.Source.Description}\n심사위원채점표: {s.Source.Score}\n공단채점표: {s.Target.Max}")
+                        .StringJoin(Environment.NewLine);
+                    MessageBox.Show($"세부항목 배점이 다릅니다.\n{errorMessage}");
                     return false;
                 }
             }
@@ -150,6 +151,8 @@ namespace ScoreConverter
                 {
                     if (score.SubProblem.Score < score.UserScore)
                     {
+                        sourceWorksheet.Activate();
+                        score.Cell.Activate();
                         MessageBox.Show($"선수의 득점이 범위를 초과하였습니다.\n채점번호: {user.Number}\n항목: {score.SubProblem.ProblemName} - {score.SubProblem.Description}\n범위: {score.SubProblem.Score}\n득점: {score.UserScore}");
                         return false;
                     }
@@ -165,33 +168,34 @@ namespace ScoreConverter
         public static void Execute(Excel.Worksheet sourceWorksheet, Excel.Workbook targetWorkbook, bool execute)
         {
             var source = new SourceWorksheet(sourceWorksheet);
-            var target = new TargetWorkbook(targetWorkbook, source.Problems);
+            var target = new TargetWorkbook(targetWorkbook);
 
             foreach (var targetSheet in target.Worksheet)
             {
-                var targetLeftTopCell = targetSheet.Sheet.Range[TargetConfig.ScoreLeftTopAddress];
-                var userDataList = targetSheet.UserNumbers.Zip(targetSheet.UserCells, (a, b) => new { UserNumber = a, Cell = b }).ToList();
                 targetSheet.Sheet.Activate();
+
+                var targetLeftTopCell = targetSheet.Sheet.Range[TargetConfig.ScoreLeftTopAddress];
+                var userDataList = targetSheet.UserData;
 
                 var minRow = userDataList.Min(x => x.Cell.Row);
                 var maxRow = userDataList.Max(x => x.Cell.Row);
                 var rowCount = maxRow - minRow + 1;
-                var subProblemCount = targetSheet.ScoreRange.Count;
+                var subProblemCount = targetSheet.SubProblems.Count;
 
                 var scoreArray = new object[rowCount, subProblemCount];
 
                 foreach (var userData in userDataList)
                 {
-                    var userScoreData = source.Users.First(x => x.Number == userData.UserNumber);
+                    var userScoreData = source.Users.First(x => x.Number == userData.Number);
 
                     int column = 0;
-                    foreach (var scoreData in targetSheet.ScoreRange)
+                    foreach (var subProblem in targetSheet.SubProblems)
                     {
-                        var targetCell = targetSheet.Sheet.GetCell(userData.Cell.Row, targetLeftTopCell.Column + scoreData.Index);
+                        var targetCell = targetSheet.Sheet.GetCell(userData.Cell.Row, subProblem.Column);
 
                         var userScores = userScoreData.Scores
-                            .Where(x => x.SubProblem.ProblemName == targetSheet.Problem.ProblemName)
-                            .Where(x => x.SubProblem.Description.StartsWith(scoreData.Desc))
+                            .Where(x => x.SubProblem.ProblemName == targetSheet.ProblemName)
+                            .Where(x => x.SubProblem.Description.StartsWith(subProblem.Desc))
                             .ToList();
 
                         if (userScores.Empty())

@@ -136,6 +136,7 @@ namespace ScoreConverter
                         {
                             x.SubProblem,
                             Score = valueDouble,
+                            Cell = x.Cell,
                             Error = false,
                             ErrorMessage = string.Empty,
                         };
@@ -146,6 +147,7 @@ namespace ScoreConverter
                         {
                             x.SubProblem,
                             Score = 0.0,
+                            Cell = x.Cell,
                             Error = true,
                             ErrorMessage = $"점수가 숫자로 변환되지 않습니다. 시트: {source.Name}, 셀: {x.Cell.Address}",
                         };
@@ -165,7 +167,7 @@ namespace ScoreConverter
             return new UserData
             {
                 Number = userNumber,
-                Scores = scores.Select(x => (x.SubProblem, x.Score)).ToList(),
+                Scores = scores.Select(x => (x.SubProblem, x.Score, x.Cell)).ToList(),
             };
         }
     }
